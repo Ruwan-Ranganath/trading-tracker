@@ -1,0 +1,67 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/go/pkg/mod
+          **/go.sum
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+    
+    - name: Cache Node modules
+      uses: actions/cache@v3
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock', '**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        go mod download
+        cd ../frontend
+        npm ci
+    
+    - name: Lint
+      run: |
+        cd backend
+        go vet ./...
+        go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+        cd ../frontend
+        npm run check
+    
+    - name: Build
+      run: |
+        cd frontend
+        npm run build
+        cd ../backend
+        CGO_ENABLED=0 GOOS=linux go build -o app ./cmd/api/
+
+    # Add deployment steps here for staging/production
+    # These would include building Docker images and deploying to Kubernetes

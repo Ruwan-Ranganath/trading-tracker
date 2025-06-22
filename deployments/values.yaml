@@ -1,0 +1,32 @@
+# Default values for trading-tracker
+replicaCount: 1
+
+image:
+  repository: your-registry/trading-tracker
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Binance API configuration
+config:
+  binanceApiKey: ""
+  binanceSecretKey: ""
+  environment: production
